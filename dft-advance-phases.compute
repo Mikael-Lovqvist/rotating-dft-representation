@@ -1,0 +1,17 @@
+#version 430
+#define BUFFER_LENGTH			1024
+#define FREQUENCY_BINS			1024
+#define M_TAU 					6.283185307179586
+
+layout (local_size_x = 16) in;
+
+layout(r32f) uniform image1D phase_offset;			//Current frequency offset
+layout(r32f) uniform image1D phase_advance;			//Phase advancement per frequency
+
+void main() {
+	int F = int(gl_GlobalInvocationID.x);
+
+	float new_offset = mod(imageLoad(phase_offset, F).r + float(BUFFER_LENGTH) * imageLoad(phase_advance, F).r, M_TAU);
+	imageStore(phase_offset, F, vec4(new_offset, 0, 0, 0));
+	
+}

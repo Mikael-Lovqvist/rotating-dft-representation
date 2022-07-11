@@ -1,0 +1,27 @@
+#version 430
+#define BUFFER_LENGTH			1024
+#define FREQUENCY_BINS			1024
+
+layout (local_size_x = 16) in;
+
+layout(rg32f) uniform image2D pre_accumulate;		//2D vectors for each frequency and sample index
+layout(rg32f) uniform image2D height_map;
+
+void main() {
+	int F = int(gl_GlobalInvocationID.x);
+
+
+	for (int S=0; S<BUFFER_LENGTH; S++) {
+		vec2 pos = imageLoad(pre_accumulate, ivec2(S, F)).rg * 1000;
+
+		ivec2 ip = ivec2(pos) + ivec2(1024, 1024);
+		float radius = length(pos);
+		float impulse = radius *.0001;
+
+		float old = imageLoad(height_map, ip).r ;
+		imageStore(height_map, ip, vec4(old + impulse / (10+old), 0, 0, 0)) ;
+		
+		
+	}
+
+}

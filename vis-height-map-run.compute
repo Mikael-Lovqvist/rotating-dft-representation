@@ -1,0 +1,54 @@
+#version 430
+layout (local_size_x = 16, local_size_y = 16) in;
+layout(rg32f) uniform image2D destination_texture;
+layout(rg32f) uniform image2D source_texture;
+
+
+void main() {
+	ivec2 tp = ivec2(gl_GlobalInvocationID.xy);
+	
+	
+/*	float distance = sqrt(pow(float(tp.x) - float(compute_xy.x), 2) + pow(float(tp.y) - float(compute_xy.y), 2));
+	float add_value = .1 / (1+distance);
+*/
+
+
+	float new_value_r = 0.0;
+	float new_value_g = 0.0;
+	float weight = 0.0;
+
+	for (int dy=-3; dy<=3; dy++) {
+		for (int dx=-3; dx<=3; dx++) {
+			float rad =length(vec2(dx, dy));
+			float w = max(3 - rad, 0);
+			new_value_r += w * imageLoad(source_texture, tp + ivec2(dx, dy)).r;
+			new_value_g += w * imageLoad(source_texture, tp + ivec2(dx, dy)).g;
+			weight += w;
+		}		
+	}
+	
+	float old_value_r = imageLoad(source_texture, tp).r;	
+	float old_value_g = imageLoad(source_texture, tp).g;
+
+	float new_r = new_value_r / weight * .1 + old_value_r * .9;	//Now value and vel have same smoothing, we could experiment with differences here too!
+	float new_g = new_value_g / weight * .1 + old_value_g * .9;
+
+
+	//if r is value and g is velocity we want 3 things
+	//running, dampening and adding
+
+	new_r += new_g;
+
+	new_r *= 0.99;		//General dampening
+	new_g *= 0.99;
+
+	
+	new_g -= new_r*0.001;	//Gravitate towards zero
+
+	//new_g += add_value*.3;
+	
+
+	imageStore(destination_texture, tp, vec4(new_r,new_g,0,1));
+
+
+}
